@@ -10,6 +10,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/turbedy/subscription/internal/delivery"
+	"github.com/turbedy/subscription/internal/health"
 	"github.com/turbedy/subscription/internal/postgres"
 )
 
@@ -39,8 +41,16 @@ func main() {
 		}
 	}()
 
+	healthHandler := health.NewHandler(db)
+
+	handler := delivery.New(
+		log,
+		healthHandler,
+	)
+
 	server := &http.Server{
 		Addr:         net.JoinHostPort(cfg.Host, cfg.Port),
+		Handler:      handler,
 		ReadTimeout:  cfg.ReadTimeout,
 		WriteTimeout: cfg.WriteTimeout,
 	}

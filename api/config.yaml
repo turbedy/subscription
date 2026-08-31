@@ -1,0 +1,7 @@
+package: delivery
+output: ./internal/delivery/gen.go
+
+generate:
+  models: true
+  chi-server: true
+

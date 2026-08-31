@@ -1,0 +1,29 @@
+openapi: 3.0.0
+
+info:
+  title: Subscription API
+  version: 1.0.0
+
+paths:
+  /livez:
+    get:
+      tags:
+        - health
+      summary: Liveness check
+      operationId: live
+      responses:
+        '204':
+          description: Service is live
+  /readyz:
+    get:
+      tags:
+        - health
+      summary: Readiness check
+      operationId: ready
+      responses:
+        '204':
+          description: Service is ready
+
+tags:
+  - name: health
+    description: Liveness and readiness checks
