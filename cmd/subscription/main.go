@@ -1,8 +1,14 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"log/slog"
+	"net"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/turbedy/subscription/internal/postgres"
 )
@@ -32,4 +38,30 @@ func main() {
 			log.Error("failed to close postgres", "error", err)
 		}
 	}()
+
+	server := &http.Server{
+		Addr:         net.JoinHostPort(cfg.Host, cfg.Port),
+		ReadTimeout:  cfg.ReadTimeout,
+		WriteTimeout: cfg.WriteTimeout,
+	}
+
+	log.Info("listening", "address", "http://"+server.Addr)
+	go func() {
+		if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			log.Error("failed to listen", "error", err)
+			os.Exit(1)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(quit)
+
+	<-quit
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Error("failed to shutdown", "error", err)
+	}
 }
